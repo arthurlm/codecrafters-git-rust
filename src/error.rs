@@ -2,7 +2,7 @@ use std::{io, string::FromUtf8Error};
 
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, PartialEq, Eq)]
 pub enum GitError {
     #[error("I/O: {0}")]
     Io(String),

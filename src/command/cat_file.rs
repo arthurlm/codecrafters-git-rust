@@ -6,7 +6,7 @@ use std::{
 
 use flate2::read::ZlibDecoder;
 
-use crate::{path_utils::checksum_to_path, GitError, ObjectHeader};
+use crate::{header::ObjectHeader, path_utils::checksum_to_path, GitError};
 
 pub fn run(cs: &str) -> Result<(), GitError> {
     let path = PathBuf::from(".git/objects").join(checksum_to_path(cs));
