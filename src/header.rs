@@ -3,11 +3,11 @@ use std::io;
 use crate::GitError;
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum ObjectHeader {
+pub enum GitObjectHeader {
     Blob { len: usize },
 }
 
-impl ObjectHeader {
+impl GitObjectHeader {
     pub fn read<R: io::BufRead>(input: &mut R) -> Result<Self, GitError> {
         let mut output = Vec::with_capacity(50);
         input.read_until(0, &mut output)?;
