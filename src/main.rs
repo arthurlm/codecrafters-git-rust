@@ -10,6 +10,11 @@ struct Args {
 #[derive(Subcommand)]
 enum SubCommand {
     Init,
+    CatFile {
+        #[arg(short, long)]
+        pretty: bool,
+        name: String,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -19,6 +24,12 @@ fn main() -> anyhow::Result<()> {
         SubCommand::Init => {
             command::init::run()?;
             println!("Initialized git directory");
+            Ok(())
+        }
+        SubCommand::CatFile { pretty, name } => {
+            if pretty {
+                command::cat_file::run(&name)?;
+            }
             Ok(())
         }
     }
