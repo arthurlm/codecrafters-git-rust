@@ -30,4 +30,14 @@ impl GitObjectHeader {
             _ => Err(GitError::InvalidObjectHeader("bad header type")),
         }
     }
+
+    pub fn write<W: io::Write>(&self, output: &mut W) -> Result<(), GitError> {
+        match self {
+            GitObjectHeader::Blob { len } => {
+                write!(output, "blob {len}\0")?;
+            }
+        }
+
+        Ok(())
+    }
 }

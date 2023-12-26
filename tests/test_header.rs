@@ -28,6 +28,13 @@ fn test_read_blob() {
 }
 
 #[test]
+fn test_write_blob() {
+    let mut out = Vec::new();
+    GitObjectHeader::Blob { len: 50 }.write(&mut out).unwrap();
+    assert_eq!(out, b"blob 50\0");
+}
+
+#[test]
 fn test_read_invalid() {
     check_err_eq(b"", GitError::InvalidObjectHeader("missing header type"));
     check_err_eq(b"foo", GitError::InvalidObjectHeader("bad header type"));
