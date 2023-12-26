@@ -1,21 +1,25 @@
-#[allow(unused_imports)]
-use std::env;
-#[allow(unused_imports)]
-use std::fs;
+use clap::{Parser, Subcommand};
+use git_starter_rust::command;
 
-fn main() {
-    // You can use print statements as follows for debugging, they'll be visible when running tests.
-    println!("Logs from your program will appear here!");
+#[derive(Parser)]
+struct Args {
+    #[command(subcommand)]
+    command: SubCommand,
+}
 
-    // Uncomment this block to pass the first stage
-    // let args: Vec<String> = env::args().collect();
-    // if args[1] == "init" {
-    //     fs::create_dir(".git").unwrap();
-    //     fs::create_dir(".git/objects").unwrap();
-    //     fs::create_dir(".git/refs").unwrap();
-    //     fs::write(".git/HEAD", "ref: refs/heads/master\n").unwrap();
-    //     println!("Initialized git directory")
-    // } else {
-    //     println!("unknown command: {}", args[1])
-    // }
+#[derive(Subcommand)]
+enum SubCommand {
+    Init,
+}
+
+fn main() -> anyhow::Result<()> {
+    let args = Args::parse();
+
+    match args.command {
+        SubCommand::Init => {
+            command::init::run()?;
+            println!("Initialized git directory");
+            Ok(())
+        }
+    }
 }
