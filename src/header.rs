@@ -5,6 +5,7 @@ use crate::GitError;
 #[derive(Debug, PartialEq, Eq)]
 pub enum GitObjectHeader {
     Blob { len: usize },
+    Tree { size: usize },
 }
 
 impl GitObjectHeader {
@@ -27,14 +28,25 @@ impl GitObjectHeader {
 
                 Ok(Self::Blob { len })
             }
+            "tree" => {
+                let size = header_raw_iter
+                    .next()
+                    .and_then(|x| x.parse().ok())
+                    .ok_or(GitError::InvalidObjectHeader("bad header len"))?;
+
+                Ok(Self::Tree { size })
+            }
             _ => Err(GitError::InvalidObjectHeader("bad header type")),
         }
     }
 
     pub fn write<W: io::Write>(&self, output: &mut W) -> Result<(), GitError> {
         match self {
-            GitObjectHeader::Blob { len } => {
+            Self::Blob { len } => {
                 write!(output, "blob {len}\0")?;
+            }
+            Self::Tree { size } => {
+                write!(output, "tree {size}\0")?;
             }
         }
 

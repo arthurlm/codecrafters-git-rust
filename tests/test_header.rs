@@ -28,10 +28,25 @@ fn test_read_blob() {
 }
 
 #[test]
+fn test_read_tree() {
+    check_eq(
+        b"tree 269\0100644 .gitattributes",
+        GitObjectHeader::Tree { size: 269 },
+    );
+}
+
+#[test]
 fn test_write_blob() {
     let mut out = Vec::new();
     GitObjectHeader::Blob { len: 50 }.write(&mut out).unwrap();
     assert_eq!(out, b"blob 50\0");
+}
+
+#[test]
+fn test_write_tree() {
+    let mut out = Vec::new();
+    GitObjectHeader::Tree { size: 18 }.write(&mut out).unwrap();
+    assert_eq!(out, b"tree 18\0");
 }
 
 #[test]

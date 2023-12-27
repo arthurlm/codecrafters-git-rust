@@ -1,4 +1,4 @@
-use std::{io, string::FromUtf8Error};
+use std::{io, str::Utf8Error, string::FromUtf8Error};
 
 use thiserror::Error;
 
@@ -12,6 +12,9 @@ pub enum GitError {
 
     #[error("Invalid header: {0}")]
     InvalidObjectHeader(&'static str),
+
+    #[error("Invalid object payload: {0}")]
+    InvalidObjectPayload(&'static str),
 }
 
 impl From<io::Error> for GitError {
@@ -22,6 +25,12 @@ impl From<io::Error> for GitError {
 
 impl From<FromUtf8Error> for GitError {
     fn from(err: FromUtf8Error) -> Self {
+        Self::InvalidContent(err.to_string())
+    }
+}
+
+impl From<Utf8Error> for GitError {
+    fn from(err: Utf8Error) -> Self {
         Self::InvalidContent(err.to_string())
     }
 }

@@ -1,7 +1,4 @@
-use std::{
-    fs,
-    io::{stdout, BufReader, Write},
-};
+use std::{fs, io::BufReader};
 
 use flate2::read::ZlibDecoder;
 
@@ -15,10 +12,12 @@ pub fn run(cs: &str) -> Result<(), GitError> {
     let object = GitObject::read(&mut reader)?;
 
     match object {
-        GitObject::Blob(content) => {
-            stdout().write_all(&content)?;
+        GitObject::Blob(_) => {}
+        GitObject::Tree(items) => {
+            for item in items {
+                println!("{}", item.name);
+            }
         }
-        GitObject::Tree(_) => {}
     }
 
     Ok(())

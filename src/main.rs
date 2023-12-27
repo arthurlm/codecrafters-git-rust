@@ -31,6 +31,15 @@ enum SubCommand {
         /// Input file name.
         path: PathBuf,
     },
+    /// List tree object content.
+    LsTree {
+        /// Show only file name.
+        #[arg(long)]
+        name_only: bool,
+
+        /// Blob name.
+        name: String,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -50,6 +59,10 @@ fn main() -> anyhow::Result<()> {
         }
         SubCommand::HashObject { write, path } => {
             command::hash_object::run(path, write)?;
+            Ok(())
+        }
+        SubCommand::LsTree { name, .. } => {
+            command::ls_tree::run(&name)?;
             Ok(())
         }
     }

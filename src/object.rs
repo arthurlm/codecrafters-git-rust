@@ -7,6 +7,14 @@ use crate::{header::GitObjectHeader, GitError};
 #[derive(Debug, PartialEq, Eq)]
 pub enum GitObject {
     Blob(Vec<u8>),
+    Tree(Vec<GitTreeItem>),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct GitTreeItem {
+    pub mode: u32,
+    pub name: String,
+    pub hash_code: [u8; 20],
 }
 
 impl GitObject {
@@ -17,6 +25,47 @@ impl GitObject {
                 input.read_exact(&mut content)?;
                 Ok(Self::Blob(content))
             }
+            GitObjectHeader::Tree { size } => {
+                let mut content = vec![0; size];
+                input.read_exact(&mut content)?;
+
+                // NOTE: Maybe there is a nicer way to do bellow code 🤔
+                let mut items = Vec::new();
+                while !content.is_empty() {
+                    let end_offset = content
+                        .iter()
+                        .position(|x| *x == 0)
+                        .ok_or(GitError::InvalidObjectPayload("Missing end byte"))?;
+
+                    // Read mode + name
+                    let chunk: Vec<_> = content.drain(..end_offset).collect();
+
+                    let text = std::str::from_utf8(&chunk)?;
+                    let mut text_iter = text.split_whitespace();
+                    let mode = text_iter
+                        .next()
+                        .ok_or(GitError::InvalidObjectPayload("Missing tree item mode"))?
+                        .parse()
+                        .map_err(|_err| GitError::InvalidObjectPayload("Invalid tree item mode"))?;
+                    let name = text_iter
+                        .next()
+                        .ok_or(GitError::InvalidObjectPayload("Missing tree item name"))?
+                        .to_string();
+
+                    // Rend end byte + hash code
+                    content.drain(..1);
+
+                    let mut hash_code = [0_u8; 20];
+                    hash_code.copy_from_slice(content.drain(..20).as_slice());
+                    items.push(GitTreeItem {
+                        mode,
+                        name,
+                        hash_code,
+                    });
+                }
+
+                Ok(Self::Tree(items))
+            }
         }
     }
 
@@ -24,7 +73,7 @@ impl GitObject {
         let mut hasher = Sha1::new();
 
         match self {
-            GitObject::Blob(content) => {
+            Self::Blob(content) => {
                 let header = GitObjectHeader::Blob { len: content.len() };
                 let mut header_data = Vec::with_capacity(50);
                 header.write(&mut header_data)?;
@@ -35,6 +84,7 @@ impl GitObject {
                 hasher.update(content);
                 output.write_all(content)?;
             }
+            Self::Tree(_items) => todo!(),
         }
 
         Ok(hasher.finalize().into())
