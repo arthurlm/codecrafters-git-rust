@@ -2,7 +2,6 @@ use std::{env, path::PathBuf};
 
 use clap::{Parser, Subcommand};
 use git_starter_rust::command;
-use hex::ToHex;
 
 #[derive(Parser)]
 struct Args {
@@ -62,7 +61,7 @@ fn main() -> anyhow::Result<()> {
         SubCommand::HashObject { write, path } => {
             let hash_code = command::hash_object::run(path, write)?;
 
-            println!("{}", hash_code.encode_hex::<String>());
+            println!("{}", hex::encode(hash_code));
             Ok(())
         }
         SubCommand::LsTree { name, .. } => {
@@ -73,7 +72,7 @@ fn main() -> anyhow::Result<()> {
             let hash_code =
                 command::write_tree::run(env::current_dir().expect("Missing current dir"))?;
 
-            println!("{}", hash_code.encode_hex::<String>());
+            println!("{}", hex::encode(hash_code));
             Ok(())
         }
     }

@@ -4,7 +4,6 @@ use git_starter_rust::{
     object::{GitObject, GitTreeItem},
     GitError,
 };
-use hex::ToHex;
 
 #[test]
 fn test_debug() {
@@ -23,7 +22,7 @@ fn check_read_eq(input: &[u8], expected: GitObject) {
 fn check_write_eq(input: GitObject, expected_data: &[u8], expected_code: &str) {
     let (code, output) = input.to_bytes_vec().unwrap();
     assert_eq!(output, expected_data);
-    assert_eq!(code.encode_hex::<String>(), expected_code);
+    assert_eq!(hex::encode(code), expected_code);
 }
 
 fn check_err_eq(input: &[u8], expected: GitError) {
