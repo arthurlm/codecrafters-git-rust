@@ -6,6 +6,7 @@ use crate::GitError;
 pub enum GitObjectHeader {
     Blob { len: usize },
     Tree { size: usize },
+    Commit { size: usize },
 }
 
 impl GitObjectHeader {
@@ -19,37 +20,30 @@ impl GitObjectHeader {
             .next()
             .ok_or(GitError::InvalidObjectHeader("missing header type"))?;
 
+        let len = header_raw_iter
+            .next()
+            .and_then(|x| x.parse().ok())
+            .ok_or(GitError::InvalidObjectHeader("bad header len"))?;
+
         match header_type {
-            "blob" => {
-                let len = header_raw_iter
-                    .next()
-                    .and_then(|x| x.parse().ok())
-                    .ok_or(GitError::InvalidObjectHeader("bad header len"))?;
-
-                Ok(Self::Blob { len })
-            }
-            "tree" => {
-                let size = header_raw_iter
-                    .next()
-                    .and_then(|x| x.parse().ok())
-                    .ok_or(GitError::InvalidObjectHeader("bad header len"))?;
-
-                Ok(Self::Tree { size })
-            }
+            "blob" => Ok(Self::Blob { len }),
+            "tree" => Ok(Self::Tree { size: len }),
+            "commit" => Ok(Self::Commit { size: len }),
             _ => Err(GitError::InvalidObjectHeader("bad header type")),
         }
     }
 
-    pub fn write<W: io::Write>(&self, output: &mut W) -> Result<(), GitError> {
+    pub fn write<W: io::Write>(&self, output: &mut W) -> io::Result<()> {
         match self {
             Self::Blob { len } => {
-                write!(output, "blob {len}\0")?;
+                write!(output, "blob {len}\0")
             }
             Self::Tree { size } => {
-                write!(output, "tree {size}\0")?;
+                write!(output, "tree {size}\0")
+            }
+            Self::Commit { size } => {
+                write!(output, "commit {size}\0")
             }
         }
-
-        Ok(())
     }
 }

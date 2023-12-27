@@ -1,4 +1,4 @@
-use std::{io, str::Utf8Error, string::FromUtf8Error};
+use std::{fmt, io, str::Utf8Error, string::FromUtf8Error};
 
 use thiserror::Error;
 
@@ -31,6 +31,12 @@ impl From<FromUtf8Error> for GitError {
 
 impl From<Utf8Error> for GitError {
     fn from(err: Utf8Error) -> Self {
+        Self::InvalidContent(err.to_string())
+    }
+}
+
+impl From<fmt::Error> for GitError {
+    fn from(err: fmt::Error) -> Self {
         Self::InvalidContent(err.to_string())
     }
 }

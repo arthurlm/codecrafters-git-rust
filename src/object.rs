@@ -1,4 +1,4 @@
-use std::io::{self, Write};
+use std::io;
 
 use sha1::{Digest, Sha1};
 
@@ -8,6 +8,11 @@ use crate::{header::GitObjectHeader, GitError, HashCode};
 pub enum GitObject {
     Blob(Vec<u8>),
     Tree(Vec<GitTreeItem>),
+    Commit {
+        tree: HashCode,
+        parent: Option<HashCode>,
+        message: String,
+    },
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -66,6 +71,9 @@ impl GitObject {
 
                 Ok(Self::Tree(items))
             }
+            GitObjectHeader::Commit { .. } => {
+                unimplemented!()
+            }
         }
     }
 
@@ -85,6 +93,9 @@ impl GitObject {
                 output.write_all(content)?;
             }
             Self::Tree(items) => {
+                use std::io::Write;
+
+                // Write payload first
                 let mut content = Vec::new();
 
                 for item in items {
@@ -92,6 +103,7 @@ impl GitObject {
                     content.write_all(&item.hash_code)?;
                 }
 
+                // Then, write object
                 let header = GitObjectHeader::Tree {
                     size: content.len(),
                 };
@@ -103,6 +115,46 @@ impl GitObject {
 
                 hasher.update(&content);
                 output.write_all(&content)?;
+            }
+            Self::Commit {
+                tree,
+                parent,
+                message,
+            } => {
+                use std::fmt::Write;
+
+                // Write payload first
+                let mut payload = String::with_capacity(512);
+                writeln!(payload, "tree {}", hex::encode(tree))?;
+
+                if let Some(parent) = parent {
+                    writeln!(payload, "parent {}", hex::encode(parent))?;
+                }
+
+                writeln!(
+                    payload,
+                    "author Arthur LE MOIGNE <arthur.lemoigne@gmail.com> 1703674545 +0100",
+                )?;
+                writeln!(
+                    payload,
+                    "committer Arthur LE MOIGNE <arthur.lemoigne@gmail.com> 1703675206 +0100",
+                )?;
+
+                writeln!(payload)?;
+                writeln!(payload, "{message}")?;
+
+                // Then, write object
+                let header = GitObjectHeader::Commit {
+                    size: payload.len(),
+                };
+                let mut header_data = Vec::with_capacity(50);
+                header.write(&mut header_data)?;
+
+                hasher.update(&header_data);
+                output.write_all(&header_data)?;
+
+                hasher.update(&payload);
+                output.write_all(payload.as_bytes())?;
             }
         }
 

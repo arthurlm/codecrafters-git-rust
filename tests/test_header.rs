@@ -36,6 +36,11 @@ fn test_read_tree() {
 }
 
 #[test]
+fn test_read_commit() {
+    check_eq(b"commit 9\0", GitObjectHeader::Commit { size: 9 });
+}
+
+#[test]
 fn test_write_blob() {
     let mut out = Vec::new();
     GitObjectHeader::Blob { len: 50 }.write(&mut out).unwrap();
@@ -50,8 +55,17 @@ fn test_write_tree() {
 }
 
 #[test]
+fn test_write_commit() {
+    let mut out = Vec::new();
+    GitObjectHeader::Commit { size: 897 }
+        .write(&mut out)
+        .unwrap();
+    assert_eq!(out, b"commit 897\0");
+}
+
+#[test]
 fn test_read_invalid() {
     check_err_eq(b"", GitError::InvalidObjectHeader("missing header type"));
-    check_err_eq(b"foo", GitError::InvalidObjectHeader("bad header type"));
+    check_err_eq(b"foo", GitError::InvalidObjectHeader("bad header len"));
     check_err_eq(b"blob bad", GitError::InvalidObjectHeader("bad header len"));
 }

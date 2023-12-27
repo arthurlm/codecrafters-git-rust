@@ -2,7 +2,7 @@ use std::io::BufReader;
 
 use git_starter_rust::{
     object::{GitObject, GitTreeItem},
-    GitError,
+    GitError, HashCode,
 };
 
 #[test]
@@ -59,6 +59,15 @@ fn test_write_tree() {
         build_expected_simple_tree(),
         include_bytes!("./data/simple-tree.bin"),
         "5110466bb52a33957176f544c5102765e867074b",
+    );
+}
+
+#[test]
+fn test_write_commit() {
+    check_write_eq(
+        build_expected_simple_commit(),
+        include_bytes!("./data/simple-commit.bin"),
+        "760d6c57bedca0f678995535b7882f52f92d31da",
     );
 }
 
@@ -146,4 +155,21 @@ fn build_expected_simple_tree() -> GitObject {
             ],
         },
     ])
+}
+
+fn build_expected_simple_commit() -> GitObject {
+    GitObject::Commit {
+        tree: hash_code_text_to_array("e45ecd9e9fe4fcf69a6b35533afe57913090ce97"),
+        parent: Some(hash_code_text_to_array(
+            "74cc4ab80371ac64c33928d8c632e38de70a184f",
+        )),
+        message: "Add write-tree".to_string(),
+    }
+}
+
+fn hash_code_text_to_array(input: &str) -> HashCode {
+    let mut array = [0_u8; 20];
+    let data = hex::decode(input).unwrap();
+    array.copy_from_slice(&data);
+    array
 }
