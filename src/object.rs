@@ -1,4 +1,4 @@
-use std::io;
+use std::io::{self, Write};
 
 use sha1::{Digest, Sha1};
 
@@ -84,7 +84,26 @@ impl GitObject {
                 hasher.update(content);
                 output.write_all(content)?;
             }
-            Self::Tree(_items) => todo!(),
+            Self::Tree(items) => {
+                let mut content = Vec::new();
+
+                for item in items {
+                    write!(content, "{} {}\0", item.mode, item.name)?;
+                    content.write_all(&item.hash_code)?;
+                }
+
+                let header = GitObjectHeader::Tree {
+                    size: content.len(),
+                };
+                let mut header_data = Vec::with_capacity(50);
+                header.write(&mut header_data)?;
+
+                hasher.update(&header_data);
+                output.write_all(&header_data)?;
+
+                hasher.update(&content);
+                output.write_all(&content)?;
+            }
         }
 
         Ok(hasher.finalize().into())
