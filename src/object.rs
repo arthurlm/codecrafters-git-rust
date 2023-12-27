@@ -2,7 +2,7 @@ use std::io::{self, Write};
 
 use sha1::{Digest, Sha1};
 
-use crate::{header::GitObjectHeader, GitError};
+use crate::{header::GitObjectHeader, GitError, HashCode};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum GitObject {
@@ -14,7 +14,7 @@ pub enum GitObject {
 pub struct GitTreeItem {
     pub mode: u32,
     pub name: String,
-    pub hash_code: [u8; 20],
+    pub hash_code: HashCode,
 }
 
 impl GitObject {
@@ -69,7 +69,7 @@ impl GitObject {
         }
     }
 
-    pub fn write<W: io::Write>(&self, output: &mut W) -> Result<[u8; 20], GitError> {
+    pub fn write<W: io::Write>(&self, output: &mut W) -> Result<HashCode, GitError> {
         let mut hasher = Sha1::new();
 
         match self {
@@ -107,5 +107,11 @@ impl GitObject {
         }
 
         Ok(hasher.finalize().into())
+    }
+
+    pub fn to_bytes_vec(&self) -> Result<(HashCode, Vec<u8>), GitError> {
+        let mut bytes = Vec::new();
+        let hash_code = self.write(&mut bytes)?;
+        Ok((hash_code, bytes))
     }
 }

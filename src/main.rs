@@ -1,7 +1,8 @@
-use std::path::PathBuf;
+use std::{env, path::PathBuf};
 
 use clap::{Parser, Subcommand};
 use git_starter_rust::command;
+use hex::ToHex;
 
 #[derive(Parser)]
 struct Args {
@@ -40,6 +41,7 @@ enum SubCommand {
         /// Blob name.
         name: String,
     },
+    WriteTree,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -58,11 +60,20 @@ fn main() -> anyhow::Result<()> {
             Ok(())
         }
         SubCommand::HashObject { write, path } => {
-            command::hash_object::run(path, write)?;
+            let hash_code = command::hash_object::run(path, write)?;
+
+            println!("{}", hash_code.encode_hex::<String>());
             Ok(())
         }
         SubCommand::LsTree { name, .. } => {
             command::ls_tree::run(&name)?;
+            Ok(())
+        }
+        SubCommand::WriteTree => {
+            let hash_code =
+                command::write_tree::run(env::current_dir().expect("Missing current dir"))?;
+
+            println!("{}", hash_code.encode_hex::<String>());
             Ok(())
         }
     }

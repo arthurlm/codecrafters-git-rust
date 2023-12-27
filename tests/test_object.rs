@@ -21,8 +21,7 @@ fn check_read_eq(input: &[u8], expected: GitObject) {
 }
 
 fn check_write_eq(input: GitObject, expected_data: &[u8], expected_code: &str) {
-    let mut output = Vec::new();
-    let code = input.write(&mut output).unwrap();
+    let (code, output) = input.to_bytes_vec().unwrap();
     assert_eq!(output, expected_data);
     assert_eq!(code.encode_hex::<String>(), expected_code);
 }
