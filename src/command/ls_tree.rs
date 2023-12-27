@@ -11,12 +11,9 @@ pub fn run(cs: &str) -> Result<(), GitError> {
 
     let object = GitObject::read(&mut reader)?;
 
-    match object {
-        GitObject::Blob(_) => {}
-        GitObject::Tree(items) => {
-            for item in items {
-                println!("{}", item.name);
-            }
+    if let GitObject::Tree(items) = object {
+        for item in items {
+            println!("{}", item.name);
         }
     }
 

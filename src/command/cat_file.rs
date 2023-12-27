@@ -14,11 +14,8 @@ pub fn run(cs: &str) -> Result<(), GitError> {
 
     let object = GitObject::read(&mut reader)?;
 
-    match object {
-        GitObject::Blob(content) => {
-            stdout().write_all(&content)?;
-        }
-        GitObject::Tree(_) => {}
+    if let GitObject::Blob(content) = object {
+        stdout().write_all(&content)?;
     }
 
     Ok(())
