@@ -1,17 +1,9 @@
-use std::{
-    fs,
-    io::{stdout, BufReader, Write},
-};
+use std::io::{stdout, Write};
 
-use flate2::read::ZlibDecoder;
-
-use crate::{object::GitObject, path_utils::checksum_to_path, GitError};
+use crate::{fs_utils::read_compressed, object::GitObject, GitError};
 
 pub fn run(cs: &str) -> Result<(), GitError> {
-    let path = checksum_to_path(cs);
-    let file = fs::File::open(path)?;
-    let mut reader = BufReader::new(ZlibDecoder::new(file));
-
+    let mut reader = read_compressed(cs)?;
     let object = GitObject::read(&mut reader)?;
 
     if let GitObject::Blob(content) = object {
