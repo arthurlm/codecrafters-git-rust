@@ -1,7 +1,7 @@
 use std::{env, path::PathBuf};
 
 use clap::{Parser, Subcommand};
-use git_starter_rust::command;
+use git_starter_rust::{command, hash_code_text_to_array};
 
 #[derive(Parser)]
 struct Args {
@@ -40,7 +40,21 @@ enum SubCommand {
         /// Blob name.
         name: String,
     },
+    /// Write current dir as a object tree.
     WriteTree,
+    /// Create new commit from scratch.
+    CommitTree {
+        /// Tree object ID.
+        tree: String,
+
+        /// Parent object ID.
+        #[arg(short, long)]
+        parent: String,
+
+        /// Commit message.
+        #[arg(short, long)]
+        message: String,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -71,6 +85,20 @@ fn main() -> anyhow::Result<()> {
         SubCommand::WriteTree => {
             let hash_code =
                 command::write_tree::run(env::current_dir().expect("Missing current dir"))?;
+
+            println!("{}", hex::encode(hash_code));
+            Ok(())
+        }
+        SubCommand::CommitTree {
+            tree,
+            parent,
+            message,
+        } => {
+            let hash_code = command::commit_tree::run(
+                hash_code_text_to_array(&tree),
+                hash_code_text_to_array(&parent),
+                &message,
+            )?;
 
             println!("{}", hex::encode(hash_code));
             Ok(())

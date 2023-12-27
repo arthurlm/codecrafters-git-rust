@@ -1,8 +1,9 @@
 use std::io::BufReader;
 
 use git_starter_rust::{
+    hash_code_text_to_array,
     object::{GitObject, GitTreeItem},
-    GitError, HashCode,
+    GitError,
 };
 
 #[test]
@@ -165,11 +166,4 @@ fn build_expected_simple_commit() -> GitObject {
         )),
         message: "Add write-tree".to_string(),
     }
-}
-
-fn hash_code_text_to_array(input: &str) -> HashCode {
-    let mut array = [0_u8; 20];
-    let data = hex::decode(input).unwrap();
-    array.copy_from_slice(&data);
-    array
 }
