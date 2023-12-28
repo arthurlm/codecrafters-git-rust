@@ -2,6 +2,7 @@ use std::io;
 
 use crate::GitError;
 
+// TODO: Convert this to a regular struct + enum
 #[derive(Debug, PartialEq, Eq)]
 pub enum GitObjectHeader {
     Blob { len: usize },
@@ -44,6 +45,14 @@ impl GitObjectHeader {
             Self::Commit { size } => {
                 write!(output, "commit {size}\0")
             }
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        match self {
+            GitObjectHeader::Blob { len } => *len,
+            GitObjectHeader::Tree { size } => *size,
+            GitObjectHeader::Commit { size } => *size,
         }
     }
 }

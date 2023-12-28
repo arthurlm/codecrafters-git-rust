@@ -6,6 +6,7 @@ use std::{
 
 use clap::{Parser, Subcommand};
 use git_starter_rust::{
+    clone::clone,
     fs_utils::{read_compressed, write_compressed},
     hash_code_text_to_array,
     object::{GitObject, GitTreeItem},
@@ -64,9 +65,18 @@ enum SubCommand {
         #[arg(short, long)]
         message: String,
     },
+    /// Clone a repository.
+    Clone {
+        /// Source URL.
+        url: String,
+
+        /// Repo path
+        dst: PathBuf,
+    },
 }
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     match args.command {
@@ -109,6 +119,10 @@ fn main() -> anyhow::Result<()> {
             )?;
 
             println!("{}", hex::encode(hash_code));
+            Ok(())
+        }
+        SubCommand::Clone { url, .. } => {
+            clone(&url).await?;
             Ok(())
         }
     }
