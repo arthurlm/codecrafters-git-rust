@@ -24,7 +24,15 @@ pub struct GitTreeItem {
 
 impl GitObject {
     pub fn read<R: io::BufRead>(input: &mut R) -> Result<Self, GitError> {
-        match GitObjectHeader::read(input)? {
+        let header = GitObjectHeader::read(input)?;
+        Self::read_with_header(input, header)
+    }
+
+    pub fn read_with_header<R: io::BufRead>(
+        input: &mut R,
+        header: GitObjectHeader,
+    ) -> Result<Self, GitError> {
+        match header {
             GitObjectHeader::Blob { len } => {
                 let mut content = vec![0; len];
                 input.read_exact(&mut content)?;
