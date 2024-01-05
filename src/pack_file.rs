@@ -81,8 +81,7 @@ where
                 reader.read_exact(&mut base_object_hash)?;
 
                 // Find base object data from git DB.
-                let mut base_reader =
-                    read_compressed_at(&hex::encode(base_object_hash), dst.clone())?;
+                let mut base_reader = read_compressed_at(base_object_hash, dst.clone())?;
 
                 let mut base_data = Vec::new();
                 base_reader.read_to_end(&mut base_data)?;

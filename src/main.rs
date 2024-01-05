@@ -138,7 +138,7 @@ pub fn command_init() -> io::Result<()> {
 }
 
 pub fn command_cat_file(cs: &str) -> Result<(), GitError> {
-    let mut reader = read_compressed(cs)?;
+    let mut reader = read_compressed(hash_code_text_to_array(cs))?;
     let object = GitObject::read(&mut reader)?;
 
     if let GitObject::Blob(content) = object {
@@ -161,7 +161,7 @@ pub fn command_hash_object<P: AsRef<Path>>(path: P, write: bool) -> Result<HashC
 }
 
 pub fn command_ls_tree(cs: &str) -> Result<(), GitError> {
-    let mut reader = read_compressed(cs)?;
+    let mut reader = read_compressed(hash_code_text_to_array(cs))?;
     let object = GitObject::read(&mut reader)?;
 
     if let GitObject::Tree(items) = object {

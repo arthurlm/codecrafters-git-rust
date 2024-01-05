@@ -1,10 +1,13 @@
 use std::io::Read;
 
-use git_starter_rust::fs_utils::*;
+use git_starter_rust::{fs_utils::*, hash_code_text_to_array};
 
 #[test]
 fn test_rw() {
-    let mut reader = read_compressed("fa6eb0c05a11f886f3d5e15f7c1dc794428b9228").unwrap();
+    let mut reader = read_compressed(hash_code_text_to_array(
+        "fa6eb0c05a11f886f3d5e15f7c1dc794428b9228",
+    ))
+    .unwrap();
     let mut buf = Vec::with_capacity(512);
     reader.read_to_end(&mut buf).unwrap();
 
