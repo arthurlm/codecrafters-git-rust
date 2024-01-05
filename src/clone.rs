@@ -17,9 +17,10 @@ pub async fn clone<P: AsRef<Path> + Clone>(url: &str, dst: P) -> Result<(), GitE
 
     try_join!(
         fs::create_dir(dst.join(".git/objects")),
-        fs::create_dir(dst.join(".git/refs")),
+        fs::create_dir_all(dst.join(".git/refs/heads")),
         fs::write(dst.join(".git/config"), ""),
         fs::write(dst.join(".git/description"), "empty repository"),
+        fs::write(dst.join(".git/HEAD"), "ref: refs/heads/master\n"),
     )?;
 
     // List refs from remote repository.
