@@ -34,6 +34,10 @@ pub async fn clone<P: AsRef<Path> + Clone>(url: &str, dst: P) -> Result<(), GitE
 
     // Download it locally.
     head.download_into(url, dst).await?;
+
+    // Configure HEAD
+    fs::write(dst.join(".git/refs/heads/master"), &head.object_id).await?;
+
     Ok(())
 }
 
