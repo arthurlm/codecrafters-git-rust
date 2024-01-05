@@ -1,4 +1,4 @@
-use std::io;
+use std::{fs::Permissions, io, os::unix::fs::PermissionsExt};
 
 use bytes::Bytes;
 use sha1::{Digest, Sha1};
@@ -62,11 +62,12 @@ impl GitObject {
 
                     let text = std::str::from_utf8(&chunk)?;
                     let mut text_iter = text.split_whitespace();
-                    let mode = text_iter
+                    let mode_text = text_iter
                         .next()
-                        .ok_or(GitError::InvalidObjectPayload("Missing tree item mode"))?
-                        .parse()
+                        .ok_or(GitError::InvalidObjectPayload("Missing tree item mode"))?;
+                    let mode = u32::from_str_radix(mode_text, 8)
                         .map_err(|_err| GitError::InvalidObjectPayload("Invalid tree item mode"))?;
+
                     let name = text_iter
                         .next()
                         .ok_or(GitError::InvalidObjectPayload("Missing tree item name"))?
@@ -166,7 +167,7 @@ impl GitObject {
                 let mut content = Vec::new();
 
                 for item in items {
-                    write!(content, "{} {}\0", item.mode, item.name)?;
+                    write!(content, "{:o} {}\0", item.mode, item.name)?;
                     content.write_all(&item.hash_code)?;
                 }
 
@@ -242,5 +243,11 @@ impl GitObject {
         let mut bytes = Vec::new();
         let hash_code = self.write(&mut bytes)?;
         Ok((hash_code, bytes))
+    }
+}
+
+impl GitTreeItem {
+    pub fn permissions(&self) -> Permissions {
+        Permissions::from_mode(self.mode % 0o1_000)
     }
 }

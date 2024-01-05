@@ -96,7 +96,7 @@ fn test_read_invalid() {
 fn build_expected_simple_tree() -> GitObject {
     GitObject::Tree(vec![
         GitTreeItem {
-            mode: 100644,
+            mode: 0o100644,
             name: ".gitattributes".to_string(),
             hash_code: [
                 23, 106, 69, 143, 148, 224, 234, 82, 114, 206, 103, 195, 107, 243, 11, 107, 233,
@@ -104,7 +104,7 @@ fn build_expected_simple_tree() -> GitObject {
             ],
         },
         GitTreeItem {
-            mode: 100644,
+            mode: 0o100644,
             name: ".gitignore".to_string(),
             hash_code: [
                 55, 205, 33, 126, 116, 51, 86, 228, 30, 83, 151, 149, 91, 149, 16, 126, 175, 41,
@@ -112,7 +112,7 @@ fn build_expected_simple_tree() -> GitObject {
             ],
         },
         GitTreeItem {
-            mode: 100644,
+            mode: 0o100644,
             name: "Cargo.lock".to_string(),
             hash_code: [
                 9, 9, 141, 103, 3, 112, 147, 173, 205, 34, 174, 87, 72, 237, 235, 136, 114, 152,
@@ -120,7 +120,7 @@ fn build_expected_simple_tree() -> GitObject {
             ],
         },
         GitTreeItem {
-            mode: 100644,
+            mode: 0o100644,
             name: "Cargo.toml".to_string(),
             hash_code: [
                 47, 15, 148, 226, 221, 193, 10, 233, 172, 105, 254, 203, 158, 51, 113, 28, 102,
@@ -128,7 +128,7 @@ fn build_expected_simple_tree() -> GitObject {
             ],
         },
         GitTreeItem {
-            mode: 100644,
+            mode: 0o100644,
             name: "README.md".to_string(),
             hash_code: [
                 142, 132, 161, 164, 130, 171, 142, 129, 234, 76, 185, 161, 98, 80, 167, 229, 229,
@@ -136,7 +136,7 @@ fn build_expected_simple_tree() -> GitObject {
             ],
         },
         GitTreeItem {
-            mode: 100644,
+            mode: 0o100644,
             name: "codecrafters.yml".to_string(),
             hash_code: [
                 90, 223, 107, 145, 238, 213, 52, 104, 110, 77, 84, 88, 174, 255, 35, 2, 53, 232,
@@ -144,7 +144,7 @@ fn build_expected_simple_tree() -> GitObject {
             ],
         },
         GitTreeItem {
-            mode: 40000,
+            mode: 0o40000,
             name: "src".to_string(),
             hash_code: [
                 130, 180, 131, 22, 144, 167, 189, 105, 141, 13, 100, 104, 247, 17, 230, 27, 90,
@@ -152,7 +152,7 @@ fn build_expected_simple_tree() -> GitObject {
             ],
         },
         GitTreeItem {
-            mode: 40000,
+            mode: 0o40000,
             name: "tests".to_string(),
             hash_code: [
                 206, 66, 221, 109, 130, 85, 214, 38, 45, 181, 239, 238, 198, 18, 112, 35, 87, 45,
@@ -160,7 +160,7 @@ fn build_expected_simple_tree() -> GitObject {
             ],
         },
         GitTreeItem {
-            mode: 100755,
+            mode: 0o100755,
             name: "your_git.sh".to_string(),
             hash_code: [
                 146, 162, 89, 8, 234, 154, 63, 46, 30, 85, 218, 89, 230, 228, 204, 239, 37, 221,

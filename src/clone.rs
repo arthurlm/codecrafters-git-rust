@@ -190,18 +190,19 @@ fn extract_files_from_tree(
     Box::pin(async move {
         // For each tree item.
         for item in items {
+            let sub_dst = dst.join(&item.name);
+
             // Read and parse git object content.
             let mut item_data = read_compressed_at(item.hash_code, &repo_root)?;
             let obj_item = GitObject::read(&mut item_data)?;
 
             // Extract it to the file system.
-            // TODO: handle file mode correctly 🤔.
             match obj_item {
                 GitObject::Blob(obj_content) => {
-                    fs::write(dst.join(item.name), obj_content).await?;
+                    fs::write(&sub_dst, obj_content).await?;
+                    fs::set_permissions(&sub_dst, item.permissions()).await?;
                 }
                 GitObject::Tree(sub_items) => {
-                    let sub_dst = dst.join(item.name);
                     fs::create_dir(&sub_dst).await?;
                     extract_files_from_tree(sub_items, sub_dst, repo_root.clone()).await?;
                 }
