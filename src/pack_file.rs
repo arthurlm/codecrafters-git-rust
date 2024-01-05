@@ -220,6 +220,12 @@ fn apply_patch(base: &[u8], patch: &[u8]) -> Result<GitObject, GitError> {
     }
 
     // Build git object from rebuild content + header
+    assert_eq!(
+        output.len(),
+        output_len,
+        "Final output buffer is not the same as expected"
+    );
+
     let object = GitObject::read_with_header(
         &mut output.reader(),
         GitObjectHeader {
