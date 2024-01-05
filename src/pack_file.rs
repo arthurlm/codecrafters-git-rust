@@ -7,7 +7,7 @@ use bytes::{Buf, Bytes};
 use flate2::bufread::ZlibDecoder;
 
 use crate::{
-    fs_utils::write_compressed_at,
+    fs_utils::{read_compressed_at, write_compressed_at},
     header::{GitObjectHeader, GitObjectHeaderType},
     object::GitObject,
     GitError,
@@ -80,13 +80,20 @@ where
                 let mut base_object_hash = [0; 20];
                 reader.read_exact(&mut base_object_hash)?;
 
-                // Read compressed data.
-                let mut data = Vec::with_capacity(obj_len);
-                let mut decompress = ZlibDecoder::new(&mut reader);
-                decompress.read_to_end(&mut data)?;
+                // Find base object data from git DB.
+                let mut base_reader =
+                    read_compressed_at(&hex::encode(base_object_hash), dst.clone())?;
 
-                let data = Bytes::from(data);
-                println!("data: {data:?}");
+                let mut base_data = Vec::new();
+                base_reader.read_to_end(&mut base_data)?;
+
+                // Read compressed data.
+                let mut patch_data = Vec::with_capacity(obj_len);
+                let mut decompress = ZlibDecoder::new(&mut reader);
+                decompress.read_to_end(&mut patch_data)?;
+
+                // Apply patch and save data
+                apply_patch(&base_data, &patch_data);
             }
             OBJ_OFS_DELTA | OBJ_TAG => {
                 unimplemented!("Unimplemented object type decoding: {obj_type}")
@@ -148,4 +155,10 @@ where
     write_compressed_at(hash_code, &obj_content, dst)?;
 
     Ok(())
+}
+
+fn apply_patch(base: &[u8], patch: &[u8]) {
+    let patch = Bytes::copy_from_slice(patch);
+    let base = Bytes::copy_from_slice(base);
+    println!("patch_data: {patch:?}, base_data: {base:?}");
 }
