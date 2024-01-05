@@ -5,7 +5,6 @@ pub mod header;
 pub mod object;
 pub mod pack_file;
 pub mod packet_line;
-pub mod path_utils;
 
 pub use error::*;
 

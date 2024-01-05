@@ -1,12 +1,12 @@
 use std::{
     fs,
     io::{self, BufRead, BufReader, BufWriter, Write},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use flate2::{read::ZlibDecoder, write::ZlibEncoder, Compression};
 
-use crate::{path_utils::checksum_to_path, HashCode};
+use crate::HashCode;
 
 pub fn write_compressed(hash_code: HashCode, content: &[u8]) -> io::Result<()> {
     write_compressed_at(hash_code, content, ".")
@@ -36,4 +36,22 @@ pub fn read_compressed_at<P: AsRef<Path>>(cs: &str, src: P) -> io::Result<impl B
     let path = src.as_ref().join(checksum_to_path(cs));
     let file = fs::File::open(path)?;
     Ok(BufReader::new(ZlibDecoder::new(file)))
+}
+
+fn checksum_to_path(cs: &str) -> PathBuf {
+    assert_eq!(cs.len(), 40, "Invalid checksum size");
+    PathBuf::from(".git/objects").join(&cs[..2]).join(&cs[2..])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_checksum_to_path() {
+        assert_eq!(
+            checksum_to_path("e547aac8945402134e4c0b9bb85ad82361eed68a"),
+            PathBuf::from(".git/objects/e5/47aac8945402134e4c0b9bb85ad82361eed68a"),
+        );
+    }
 }
