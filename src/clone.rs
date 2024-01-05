@@ -1,16 +1,37 @@
 use std::{io, path::Path};
 
 use bytes::{Buf, Bytes};
+use tokio::{fs, try_join};
 
 use crate::{pack_file::unpack_into, GitError};
 
 pub async fn clone<P: AsRef<Path> + Clone>(url: &str, dst: P) -> Result<(), GitError> {
+    let dst = dst.as_ref();
+
+    // Remove previous directory.
+    let _ = fs::remove_dir_all(dst).await;
+
+    // Prepare output dir.
+    fs::create_dir_all(dst).await?;
+    fs::create_dir(dst.join(".git")).await?;
+
+    try_join!(
+        fs::create_dir(dst.join(".git/objects")),
+        fs::create_dir(dst.join(".git/refs")),
+        fs::write(dst.join(".git/config"), ""),
+        fs::write(dst.join(".git/description"), "empty repository"),
+    )?;
+
+    // List refs from remote repository.
     let refs = InfoRef::list_for_repo(url).await?;
+
+    // Find HEAD.
     let head = refs
         .into_iter()
         .find(|x| x.name == "HEAD")
         .ok_or(GitError::NoHead)?;
 
+    // Download it locally.
     head.download_into(url, dst).await?;
     Ok(())
 }
