@@ -64,6 +64,14 @@ fn test_write_tree() {
 }
 
 #[test]
+fn test_read_commit() {
+    check_read_eq(
+        include_bytes!("./data/simple-commit.bin"),
+        build_expected_simple_commit(),
+    );
+}
+
+#[test]
 fn test_write_commit() {
     check_write_eq(
         build_expected_simple_commit(),
@@ -164,6 +172,10 @@ fn build_expected_simple_commit() -> GitObject {
         parent: Some(hash_code_text_to_array(
             "74cc4ab80371ac64c33928d8c632e38de70a184f",
         )),
+        author: Some("Arthur LE MOIGNE <arthur.lemoigne@gmail.com> 1703674545 +0100".to_string()),
+        committer: Some(
+            "Arthur LE MOIGNE <arthur.lemoigne@gmail.com> 1703675206 +0100".to_string(),
+        ),
         message: "Add write-tree".to_string(),
     }
 }

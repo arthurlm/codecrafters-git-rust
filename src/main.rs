@@ -211,6 +211,8 @@ pub fn command_commit_tree(
     let object = GitObject::Commit {
         tree,
         parent: Some(parent),
+        author: None,
+        committer: None,
         message: message.to_string(),
     };
 

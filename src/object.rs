@@ -2,7 +2,7 @@ use std::io;
 
 use sha1::{Digest, Sha1};
 
-use crate::{header::GitObjectHeader, GitError, HashCode};
+use crate::{hash_code_text_to_array, header::GitObjectHeader, GitError, HashCode};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum GitObject {
@@ -11,6 +11,8 @@ pub enum GitObject {
     Commit {
         tree: HashCode,
         parent: Option<HashCode>,
+        author: Option<String>,
+        committer: Option<String>,
         message: String,
     },
 }
@@ -80,7 +82,56 @@ impl GitObject {
                 Ok(Self::Tree(items))
             }
             GitObjectHeader::Commit { .. } => {
-                unimplemented!()
+                let mut buf = String::new();
+
+                // Read tree ID.
+                input.read_line(&mut buf)?;
+                let tree = match buf.trim_end().split_once(' ') {
+                    Some(("tree", x)) => hash_code_text_to_array(x),
+                    _ => return Err(GitError::invalid_content("Invalid tree line")),
+                };
+
+                // Read optional objects.
+                let mut parent = None;
+                let mut author = None;
+                let mut committer = None;
+
+                loop {
+                    buf.clear();
+                    input.read_line(&mut buf)?;
+
+                    // Check if we have reach end of metadata.
+                    if buf == "\n" {
+                        break;
+                    }
+
+                    // Otherwise check tags
+                    match buf.trim_end().split_once(' ') {
+                        Some(("parent", x)) => {
+                            parent = Some(hash_code_text_to_array(x));
+                        }
+                        Some(("author", x)) => {
+                            author = Some(x.to_string());
+                        }
+                        Some(("committer", x)) => {
+                            committer = Some(x.to_string());
+                        }
+                        _ => {}
+                    };
+                }
+
+                // Read remaining data as end of text.
+                let mut message_buf = Vec::new();
+                input.read_to_end(&mut message_buf)?;
+                let message = std::str::from_utf8(&message_buf)?;
+
+                Ok(Self::Commit {
+                    tree,
+                    parent,
+                    author,
+                    committer,
+                    message: message.trim_end().to_string(),
+                })
             }
         }
     }
@@ -127,6 +178,8 @@ impl GitObject {
             Self::Commit {
                 tree,
                 parent,
+                author,
+                committer,
                 message,
             } => {
                 use std::fmt::Write;
@@ -141,11 +194,17 @@ impl GitObject {
 
                 writeln!(
                     payload,
-                    "author Arthur LE MOIGNE <arthur.lemoigne@gmail.com> 1703674545 +0100",
+                    "author {}",
+                    author
+                        .as_deref()
+                        .unwrap_or("Arthur LE MOIGNE <arthur.lemoigne@gmail.com> 1703674545 +0100"),
                 )?;
                 writeln!(
                     payload,
-                    "committer Arthur LE MOIGNE <arthur.lemoigne@gmail.com> 1703675206 +0100",
+                    "committer {}",
+                    committer
+                        .as_deref()
+                        .unwrap_or("Arthur LE MOIGNE <arthur.lemoigne@gmail.com> 1703675206 +0100"),
                 )?;
 
                 writeln!(payload)?;
