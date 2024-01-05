@@ -1,5 +1,6 @@
 use std::io::BufReader;
 
+use bytes::Bytes;
 use git_starter_rust::clone::PacketLine;
 
 #[test]
@@ -25,7 +26,7 @@ fn test_parse_packet_line() {
     }
 
     check(b"0000", PacketLine::End);
-    check(b"0004", PacketLine::Command(vec![]));
-    check(b"0005\n", PacketLine::Command(vec![b'\n']));
+    check(b"0004", PacketLine::Command(Bytes::new()));
+    check(b"0005\n", PacketLine::Command(Bytes::from_static(b"\n")));
     check(b"0010hello world\n", PacketLine::command(b"hello world\n"));
 }

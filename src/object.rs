@@ -1,12 +1,13 @@
 use std::io;
 
+use bytes::Bytes;
 use sha1::{Digest, Sha1};
 
 use crate::{hash_code_text_to_array, header::GitObjectHeader, GitError, HashCode};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum GitObject {
-    Blob(Vec<u8>),
+    Blob(Bytes),
     Tree(Vec<GitTreeItem>),
     Commit {
         tree: HashCode,
@@ -38,7 +39,7 @@ impl GitObject {
             GitObjectHeader::Blob { len } => {
                 let mut content = vec![0; len];
                 input.read_exact(&mut content)?;
-                Ok(Self::Blob(content))
+                Ok(Self::Blob(Bytes::from(content)))
             }
             GitObjectHeader::Tree { size } => {
                 let mut content = vec![0; size];

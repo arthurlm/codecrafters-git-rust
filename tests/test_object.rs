@@ -1,5 +1,6 @@
 use std::io::BufReader;
 
+use bytes::Bytes;
 use git_starter_rust::{
     hash_code_text_to_array,
     object::{GitObject, GitTreeItem},
@@ -9,8 +10,8 @@ use git_starter_rust::{
 #[test]
 fn test_debug() {
     assert_eq!(
-        format!("{:?}", GitObject::Blob(vec![1, 2, 3, 4])),
-        "Blob([1, 2, 3, 4])"
+        format!("{:?}", GitObject::Blob(Bytes::from_static(&[1, 2, 3, 4]))),
+        "Blob(b\"\\x01\\x02\\x03\\x04\")"
     );
 }
 
@@ -34,13 +35,16 @@ fn check_err_eq(input: &[u8], expected: GitError) {
 
 #[test]
 fn test_read_blob() {
-    check_read_eq(b"blob 5\0hello", GitObject::Blob(b"hello".to_vec()));
+    check_read_eq(
+        b"blob 5\0hello",
+        GitObject::Blob(Bytes::from_static(b"hello")),
+    );
 }
 
 #[test]
 fn test_write_blob() {
     check_write_eq(
-        GitObject::Blob(b"world !".to_vec()),
+        GitObject::Blob(Bytes::from_static(b"world !")),
         b"blob 7\0world !",
         "b172bdb8bda3a22be75a84d9c47f36fd2ead05c4",
     );

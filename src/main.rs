@@ -4,6 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use bytes::Bytes;
 use clap::{Parser, Subcommand};
 use git_starter_rust::{
     clone::clone,
@@ -149,7 +150,7 @@ pub fn command_cat_file(cs: &str) -> Result<(), GitError> {
 
 pub fn command_hash_object<P: AsRef<Path>>(path: P, write: bool) -> Result<HashCode, GitError> {
     let content = fs::read(path)?;
-    let object = GitObject::Blob(content);
+    let object = GitObject::Blob(Bytes::from(content));
 
     let (hash_code, bytes) = object.to_bytes_vec()?;
     if write {

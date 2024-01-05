@@ -1,6 +1,6 @@
 use std::io;
 
-use bytes::Buf;
+use bytes::{Buf, Bytes};
 
 use crate::{pack_file::PackFile, GitError};
 
@@ -108,22 +108,22 @@ impl InfoRef {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum PacketLine {
-    Command(Vec<u8>),
+    Command(Bytes),
     End,
 }
 
 impl PacketLine {
-    pub fn command(data: &[u8]) -> Self {
-        Self::Command(data.to_vec())
+    pub fn command(data: &'static [u8]) -> Self {
+        Self::Command(Bytes::from_static(data))
     }
 
     pub fn want(object_id: &str) -> Self {
         let data = format!("want {}", object_id);
-        Self::Command(data.as_bytes().to_vec())
+        Self::Command(Bytes::from(data))
     }
 
     pub fn done() -> Self {
-        Self::Command(b"done".to_vec())
+        Self::Command(Bytes::from_static(b"done"))
     }
 
     pub fn write<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
@@ -149,7 +149,7 @@ impl PacketLine {
             let mut data = vec![0; data_len - 4];
             reader.read_exact(&mut data)?;
 
-            Ok(Self::Command(data))
+            Ok(Self::Command(Bytes::from(data)))
         }
     }
 }
