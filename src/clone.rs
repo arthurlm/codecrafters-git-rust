@@ -1,11 +1,25 @@
-use std::path::Path;
+use std::{
+    future::Future,
+    path::{Path, PathBuf},
+    pin::Pin,
+};
 
 use bytes::{Buf, Bytes};
 use tokio::{fs, try_join};
 
-use crate::{pack_file::unpack_into, packet_line::PacketLine, GitError};
+use crate::{
+    fs_utils::read_compressed_at,
+    hash_code_text_to_array,
+    object::{GitObject, GitTreeItem},
+    pack_file::unpack_into,
+    packet_line::PacketLine,
+    GitError,
+};
 
-pub async fn clone<P: AsRef<Path> + Clone>(url: &str, dst: P) -> Result<(), GitError> {
+pub async fn clone<P>(url: &str, dst: P) -> Result<(), GitError>
+where
+    P: AsRef<Path> + Clone,
+{
     let dst = dst.as_ref();
 
     // Remove previous directory.
@@ -45,6 +59,10 @@ pub async fn clone<P: AsRef<Path> + Clone>(url: &str, dst: P) -> Result<(), GitE
     // Unpack downloaded file
     println!(">> Unpacking data ...");
     unpack_into(&mut reader, dst)?;
+
+    // Extract data from git database
+    println!(">> Extracting data");
+    extract_files_from_commit(&head.object_id, dst).await?;
 
     Ok(())
 }
@@ -135,4 +153,67 @@ impl InfoRef {
 
         Ok(reader)
     }
+}
+
+async fn extract_files_from_commit<P>(commit_id: &str, dst: P) -> Result<(), GitError>
+where
+    P: AsRef<Path> + Clone,
+{
+    // Find object from git DB.
+    let mut commit_data = read_compressed_at(hash_code_text_to_array(commit_id), &dst)?;
+    let Ok(GitObject::Commit { tree, .. }) = GitObject::read(&mut commit_data) else {
+        return Err(GitError::invalid_content(
+            "Invalid object type, expected 'commit'",
+        ));
+    };
+
+    // Find object from git DB.
+    let mut tree_data = read_compressed_at(tree, &dst)?;
+    let Ok(GitObject::Tree(items)) = GitObject::read(&mut tree_data) else {
+        return Err(GitError::invalid_content(
+            "Invalid object type, expected 'tree'",
+        ));
+    };
+
+    // Extract tree
+    let root = dst.as_ref().to_path_buf();
+    extract_files_from_tree(items, root.clone(), root).await?;
+
+    Ok(())
+}
+
+fn extract_files_from_tree(
+    items: Vec<GitTreeItem>,
+    dst: PathBuf,
+    repo_root: PathBuf,
+) -> Pin<Box<dyn Future<Output = Result<(), GitError>> + Send>> {
+    Box::pin(async move {
+        // For each tree item.
+        for item in items {
+            // Read and parse git object content.
+            let mut item_data = read_compressed_at(item.hash_code, &repo_root)?;
+            let obj_item = GitObject::read(&mut item_data)?;
+
+            // Extract it to the file system.
+            // TODO: handle file mode correctly 🤔.
+            match obj_item {
+                GitObject::Blob(obj_content) => {
+                    fs::write(dst.join(item.name), obj_content).await?;
+                }
+                GitObject::Tree(sub_items) => {
+                    let sub_dst = dst.join(item.name);
+                    fs::create_dir(&sub_dst).await?;
+                    extract_files_from_tree(sub_items, sub_dst, repo_root.clone()).await?;
+                }
+                // If we are here there is probably a bug 😭.
+                GitObject::Commit { .. } => {
+                    return Err(GitError::invalid_content(
+                        "Cannot extract a commit as a file system object",
+                    ))
+                }
+            }
+        }
+
+        Ok(())
+    })
 }
