@@ -6,7 +6,12 @@ use std::{
 use bytes::{Buf, Bytes};
 use flate2::bufread::ZlibDecoder;
 
-use crate::{fs_utils::write_compressed_at, header::GitObjectHeader, object::GitObject, GitError};
+use crate::{
+    fs_utils::write_compressed_at,
+    header::{GitObjectHeader, GitObjectHeaderType},
+    object::GitObject,
+    GitError,
+};
 
 const OBJ_COMMIT: u8 = 1;
 const OBJ_TREE: u8 = 2;
@@ -48,17 +53,26 @@ where
         match obj_type {
             OBJ_COMMIT => unpack_git_object(
                 &mut reader,
-                GitObjectHeader::Commit { size: obj_len },
+                GitObjectHeader {
+                    len: obj_len,
+                    r#type: GitObjectHeaderType::Commit,
+                },
                 dst.clone(),
             )?,
             OBJ_TREE => unpack_git_object(
                 &mut reader,
-                GitObjectHeader::Tree { size: obj_len },
+                GitObjectHeader {
+                    len: obj_len,
+                    r#type: GitObjectHeaderType::Tree,
+                },
                 dst.clone(),
             )?,
             OBJ_BLOB => unpack_git_object(
                 &mut reader,
-                GitObjectHeader::Blob { len: obj_len },
+                GitObjectHeader {
+                    len: obj_len,
+                    r#type: GitObjectHeaderType::Blob,
+                },
                 dst.clone(),
             )?,
             OBJ_REF_DELTA => {
@@ -122,7 +136,7 @@ where
     P: AsRef<Path>,
 {
     // Read compressed data.
-    let mut data = Vec::with_capacity(header.len());
+    let mut data = Vec::with_capacity(header.len);
     let mut decompress = ZlibDecoder::new(reader);
     decompress.read_to_end(&mut data)?;
 

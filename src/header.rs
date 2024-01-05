@@ -2,12 +2,17 @@ use std::io;
 
 use crate::GitError;
 
-// TODO: Convert this to a regular struct + enum
 #[derive(Debug, PartialEq, Eq)]
-pub enum GitObjectHeader {
-    Blob { len: usize },
-    Tree { size: usize },
-    Commit { size: usize },
+pub struct GitObjectHeader {
+    pub len: usize,
+    pub r#type: GitObjectHeaderType,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum GitObjectHeaderType {
+    Blob,
+    Tree,
+    Commit,
 }
 
 impl GitObjectHeader {
@@ -26,33 +31,26 @@ impl GitObjectHeader {
             .and_then(|x| x.parse().ok())
             .ok_or(GitError::InvalidObjectHeader("bad header len"))?;
 
-        match header_type {
-            "blob" => Ok(Self::Blob { len }),
-            "tree" => Ok(Self::Tree { size: len }),
-            "commit" => Ok(Self::Commit { size: len }),
-            _ => Err(GitError::InvalidObjectHeader("bad header type")),
-        }
+        let r#type = match header_type {
+            "blob" => GitObjectHeaderType::Blob,
+            "tree" => GitObjectHeaderType::Tree,
+            "commit" => GitObjectHeaderType::Commit,
+            _ => return Err(GitError::InvalidObjectHeader("bad header type")),
+        };
+
+        Ok(Self { len, r#type })
     }
 
     pub fn write<W: io::Write>(&self, output: &mut W) -> io::Result<()> {
-        match self {
-            Self::Blob { len } => {
-                write!(output, "blob {len}\0")
-            }
-            Self::Tree { size } => {
-                write!(output, "tree {size}\0")
-            }
-            Self::Commit { size } => {
-                write!(output, "commit {size}\0")
-            }
-        }
-    }
-
-    pub fn len(&self) -> usize {
-        match self {
-            GitObjectHeader::Blob { len } => *len,
-            GitObjectHeader::Tree { size } => *size,
-            GitObjectHeader::Commit { size } => *size,
-        }
+        write!(
+            output,
+            "{} {}\0",
+            match self.r#type {
+                GitObjectHeaderType::Blob => "blob",
+                GitObjectHeaderType::Tree => "tree",
+                GitObjectHeaderType::Commit => "commit",
+            },
+            self.len
+        )
     }
 }

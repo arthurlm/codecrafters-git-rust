@@ -3,7 +3,11 @@ use std::io;
 use bytes::Bytes;
 use sha1::{Digest, Sha1};
 
-use crate::{hash_code_text_to_array, header::GitObjectHeader, GitError, HashCode};
+use crate::{
+    hash_code_text_to_array,
+    header::{GitObjectHeader, GitObjectHeaderType},
+    GitError, HashCode,
+};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum GitObject {
@@ -35,14 +39,14 @@ impl GitObject {
         input: &mut R,
         header: GitObjectHeader,
     ) -> Result<Self, GitError> {
-        match header {
-            GitObjectHeader::Blob { len } => {
-                let mut content = vec![0; len];
+        match header.r#type {
+            GitObjectHeaderType::Blob => {
+                let mut content = vec![0; header.len];
                 input.read_exact(&mut content)?;
                 Ok(Self::Blob(Bytes::from(content)))
             }
-            GitObjectHeader::Tree { size } => {
-                let mut content = vec![0; size];
+            GitObjectHeaderType::Tree => {
+                let mut content = vec![0; header.len];
                 input.read_exact(&mut content)?;
 
                 // NOTE: Maybe there is a nicer way to do bellow code 🤔
@@ -82,7 +86,7 @@ impl GitObject {
 
                 Ok(Self::Tree(items))
             }
-            GitObjectHeader::Commit { .. } => {
+            GitObjectHeaderType::Commit => {
                 let mut buf = String::new();
 
                 // Read tree ID.
@@ -142,7 +146,10 @@ impl GitObject {
 
         match self {
             Self::Blob(content) => {
-                let header = GitObjectHeader::Blob { len: content.len() };
+                let header = GitObjectHeader {
+                    len: content.len(),
+                    r#type: GitObjectHeaderType::Blob,
+                };
                 let mut header_data = Vec::with_capacity(50);
                 header.write(&mut header_data)?;
 
@@ -164,8 +171,9 @@ impl GitObject {
                 }
 
                 // Then, write object
-                let header = GitObjectHeader::Tree {
-                    size: content.len(),
+                let header = GitObjectHeader {
+                    len: content.len(),
+                    r#type: GitObjectHeaderType::Tree,
                 };
                 let mut header_data = Vec::with_capacity(50);
                 header.write(&mut header_data)?;
@@ -212,8 +220,9 @@ impl GitObject {
                 writeln!(payload, "{message}")?;
 
                 // Then, write object
-                let header = GitObjectHeader::Commit {
-                    size: payload.len(),
+                let header = GitObjectHeader {
+                    len: payload.len(),
+                    r#type: GitObjectHeaderType::Commit,
                 };
                 let mut header_data = Vec::with_capacity(50);
                 header.write(&mut header_data)?;
