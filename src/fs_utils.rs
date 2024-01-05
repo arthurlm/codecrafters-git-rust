@@ -29,7 +29,11 @@ pub fn write_compressed_at<P: AsRef<Path>>(
 }
 
 pub fn read_compressed(cs: &str) -> io::Result<impl BufRead> {
-    let path = checksum_to_path(cs);
+    read_compressed_at(cs, ".")
+}
+
+pub fn read_compressed_at<P: AsRef<Path>>(cs: &str, src: P) -> io::Result<impl BufRead> {
+    let path = src.as_ref().join(checksum_to_path(cs));
     let file = fs::File::open(path)?;
     Ok(BufReader::new(ZlibDecoder::new(file)))
 }
