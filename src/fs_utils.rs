@@ -1,6 +1,7 @@
 use std::{
     fs,
     io::{self, BufRead, BufReader, BufWriter, Write},
+    path::Path,
 };
 
 use flate2::{read::ZlibDecoder, write::ZlibEncoder, Compression};
@@ -8,7 +9,15 @@ use flate2::{read::ZlibDecoder, write::ZlibEncoder, Compression};
 use crate::{path_utils::checksum_to_path, HashCode};
 
 pub fn write_compressed(hash_code: HashCode, content: &[u8]) -> io::Result<()> {
-    let path = checksum_to_path(&hex::encode(hash_code));
+    write_compressed_at(hash_code, content, ".")
+}
+
+pub fn write_compressed_at<P: AsRef<Path>>(
+    hash_code: HashCode,
+    content: &[u8],
+    dst: P,
+) -> io::Result<()> {
+    let path = dst.as_ref().join(checksum_to_path(&hex::encode(hash_code)));
     let parent_path = path.parent().expect("Missing object top tree node");
     fs::create_dir_all(parent_path)?;
 
