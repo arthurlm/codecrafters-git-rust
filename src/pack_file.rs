@@ -23,7 +23,7 @@ const OBJ_REF_DELTA: u8 = 7;
 pub fn unpack_into<R, P>(mut reader: R, dst: P) -> Result<(), GitError>
 where
     R: io::BufRead,
-    P: AsRef<Path> + Clone,
+    P: AsRef<Path>,
 {
     let mut buf = [0_u8; 4];
 
@@ -57,7 +57,7 @@ where
                     len: obj_len,
                     r#type: GitObjectHeaderType::Commit,
                 },
-                dst.clone(),
+                &dst,
             )?,
             OBJ_TREE => unpack_git_object(
                 &mut reader,
@@ -65,7 +65,7 @@ where
                     len: obj_len,
                     r#type: GitObjectHeaderType::Tree,
                 },
-                dst.clone(),
+                &dst,
             )?,
             OBJ_BLOB => unpack_git_object(
                 &mut reader,
@@ -73,7 +73,7 @@ where
                     len: obj_len,
                     r#type: GitObjectHeaderType::Blob,
                 },
-                dst.clone(),
+                &dst,
             )?,
             OBJ_REF_DELTA => {
                 // Read base object hash.
@@ -81,7 +81,7 @@ where
                 reader.read_exact(&mut base_object_hash)?;
 
                 // Find base object data from git DB.
-                let mut base_reader = read_compressed_at(base_object_hash, dst.clone())?;
+                let mut base_reader = read_compressed_at(base_object_hash, &dst)?;
 
                 let mut base_data = Vec::new();
                 base_reader.read_to_end(&mut base_data)?;
@@ -96,7 +96,7 @@ where
 
                 // Write object to dst.
                 let (hash_code, obj_content) = object.to_bytes_vec()?;
-                write_compressed_at(hash_code, &obj_content, dst.clone())?;
+                write_compressed_at(hash_code, &obj_content, &dst)?;
             }
             OBJ_OFS_DELTA | OBJ_TAG => {
                 unimplemented!("Unimplemented object type decoding: {obj_type}")

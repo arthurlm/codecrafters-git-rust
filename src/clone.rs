@@ -18,7 +18,7 @@ use crate::{
 
 pub async fn clone<P>(url: &str, dst: P) -> Result<(), GitError>
 where
-    P: AsRef<Path> + Clone,
+    P: AsRef<Path>,
 {
     let dst = dst.as_ref();
 
@@ -157,7 +157,7 @@ impl InfoRef {
 
 async fn extract_files_from_commit<P>(commit_id: &str, dst: P) -> Result<(), GitError>
 where
-    P: AsRef<Path> + Clone,
+    P: AsRef<Path>,
 {
     // Find object from git DB.
     let mut commit_data = read_compressed_at(hash_code_text_to_array(commit_id), &dst)?;
