@@ -1,17 +1,17 @@
-use std::io;
+use std::{io, path::Path};
 
 use bytes::{Buf, Bytes};
 
-use crate::{pack_file::PackFile, GitError};
+use crate::{pack_file::unpack_into, GitError};
 
-pub async fn clone(url: &str) -> Result<(), GitError> {
+pub async fn clone<P: AsRef<Path> + Clone>(url: &str, dst: P) -> Result<(), GitError> {
     let refs = InfoRef::list_for_repo(url).await?;
     let head = refs
         .into_iter()
         .find(|x| x.name == "HEAD")
         .ok_or(GitError::NoHead)?;
 
-    head.read(url).await?;
+    head.download_into(url, dst).await?;
     Ok(())
 }
 
@@ -71,7 +71,11 @@ impl InfoRef {
         Ok(output)
     }
 
-    pub async fn read(&self, url: &str) -> Result<(), GitError> {
+    pub async fn download_into<P: AsRef<Path> + Clone>(
+        &self,
+        url: &str,
+        dst: P,
+    ) -> Result<(), GitError> {
         let client = reqwest::Client::new();
 
         // Create git request
@@ -100,7 +104,7 @@ impl InfoRef {
         }
 
         // Read pack file
-        PackFile::read(&mut reader)?;
+        unpack_into(&mut reader, dst)?;
 
         Ok(())
     }

@@ -122,8 +122,8 @@ async fn main() -> anyhow::Result<()> {
             println!("{}", hex::encode(hash_code));
             Ok(())
         }
-        SubCommand::Clone { url, .. } => {
-            clone(&url).await?;
+        SubCommand::Clone { url, dst } => {
+            clone(&url, dst).await?;
             Ok(())
         }
     }

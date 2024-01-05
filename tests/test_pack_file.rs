@@ -1,40 +1,42 @@
+use std::env;
+
 use bytes::{Buf, Bytes};
 use git_starter_rust::{
-    pack_file::{read_object_size, PackFile},
+    pack_file::{read_object_size, unpack_into},
     GitError,
 };
 
-fn read_packet(data: &'static [u8]) {
-    PackFile::read(&mut Bytes::from_static(data).reader()).unwrap()
+fn unpack_static(data: &'static [u8]) {
+    unpack_into(&mut Bytes::from_static(data).reader(), env::temp_dir()).unwrap()
 }
 
-fn read_err_packet(data: &'static [u8]) -> GitError {
-    PackFile::read(&mut Bytes::from_static(data).reader()).unwrap_err()
+fn unpack_static_err(data: &'static [u8]) -> GitError {
+    unpack_into(&mut Bytes::from_static(data).reader(), env::temp_dir()).unwrap_err()
 }
 
 #[test]
 fn test_invalid_parse() {
     assert_eq!(
-        read_err_packet(b""),
+        unpack_static_err(b""),
         GitError::io("failed to fill whole buffer")
     );
     assert_eq!(
-        read_err_packet(b"PUCK"),
+        unpack_static_err(b"PUCK"),
         GitError::invalid_content("Invalid magic PACK")
     );
     assert_eq!(
-        read_err_packet(b"PACK"),
+        unpack_static_err(b"PACK"),
         GitError::io("failed to fill whole buffer")
     );
     assert_eq!(
-        read_err_packet(b"PACK\0\0\0\0"),
+        unpack_static_err(b"PACK\0\0\0\0"),
         GitError::invalid_content("Invalid PACK version")
     );
 }
 
 #[test]
 fn test_valid_parse() {
-    read_packet(include_bytes!("./data/sqlite-rust.pack"));
+    unpack_static(include_bytes!("./data/sqlite-rust.pack"));
 }
 
 #[test]
