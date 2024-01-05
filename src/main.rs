@@ -191,7 +191,7 @@ pub fn command_write_tree<P: AsRef<Path>>(path: P) -> Result<HashCode, GitError>
             let hash_code = command_hash_object(dir_entry.path(), true)?;
 
             items.push(GitTreeItem {
-                mode: 100644,
+                mode: 0o100644,
                 name: dir_entry.file_name().to_string_lossy().to_string(),
                 hash_code,
             });
@@ -201,7 +201,7 @@ pub fn command_write_tree<P: AsRef<Path>>(path: P) -> Result<HashCode, GitError>
             let hash_code = command_write_tree(dir_entry.path())?;
 
             items.push(GitTreeItem {
-                mode: 40000,
+                mode: 0o40000,
                 name: dir_entry.file_name().to_string_lossy().to_string(),
                 hash_code,
             });
