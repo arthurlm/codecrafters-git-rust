@@ -1,10 +1,10 @@
 use std::io::BufReader;
 
 use bytes::Bytes;
-use git_starter_rust::clone::PacketLine;
+use git_starter_rust::packet_line::*;
 
 #[test]
-fn test_packet_line() {
+fn test_write() {
     fn check(p: PacketLine, expected: &[u8]) {
         let mut w = Vec::new();
         p.write(&mut w).unwrap();
@@ -18,7 +18,7 @@ fn test_packet_line() {
 }
 
 #[test]
-fn test_parse_packet_line() {
+fn test_read() {
     fn check(buffer: &[u8], expected: PacketLine) {
         let mut reader = BufReader::new(buffer);
         let packet = PacketLine::read(&mut reader).unwrap();
