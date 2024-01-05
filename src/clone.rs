@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use bytes::Buf;
+use bytes::{Buf, Bytes};
 use tokio::{fs, try_join};
 
 use crate::{pack_file::unpack_into, packet_line::PacketLine, GitError};
@@ -12,6 +12,7 @@ pub async fn clone<P: AsRef<Path> + Clone>(url: &str, dst: P) -> Result<(), GitE
     let _ = fs::remove_dir_all(dst).await;
 
     // Prepare output dir.
+    println!(">> Configuring new repository ...");
     fs::create_dir_all(dst).await?;
     fs::create_dir(dst.join(".git")).await?;
 
@@ -24,6 +25,7 @@ pub async fn clone<P: AsRef<Path> + Clone>(url: &str, dst: P) -> Result<(), GitE
     )?;
 
     // List refs from remote repository.
+    println!(">> Finding HEAD on remote server ...");
     let refs = InfoRef::list_for_repo(url).await?;
 
     // Find HEAD.
@@ -32,11 +34,17 @@ pub async fn clone<P: AsRef<Path> + Clone>(url: &str, dst: P) -> Result<(), GitE
         .find(|x| x.name == "HEAD")
         .ok_or(GitError::NoHead)?;
 
-    // Download it locally.
-    head.download_into(url, dst).await?;
-
     // Configure HEAD
+    println!(">> Configuring git repo ...");
     fs::write(dst.join(".git/refs/heads/master"), &head.object_id).await?;
+
+    // Download it locally.
+    println!(">> Downloading data ...");
+    let mut reader = head.download(url).await?;
+
+    // Unpack downloaded file
+    println!(">> Unpacking data ...");
+    unpack_into(&mut reader, dst)?;
 
     Ok(())
 }
@@ -97,11 +105,7 @@ impl InfoRef {
         Ok(output)
     }
 
-    pub async fn download_into<P: AsRef<Path> + Clone>(
-        &self,
-        url: &str,
-        dst: P,
-    ) -> Result<(), GitError> {
+    pub async fn download(&self, url: &str) -> Result<bytes::buf::Reader<Bytes>, GitError> {
         let client = reqwest::Client::new();
 
         // Create git request
@@ -129,9 +133,6 @@ impl InfoRef {
             return Err(GitError::Http("Bad response first packet line".to_string()));
         }
 
-        // Read pack file
-        unpack_into(&mut reader, dst)?;
-
-        Ok(())
+        Ok(reader)
     }
 }
